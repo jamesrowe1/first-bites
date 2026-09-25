@@ -44,32 +44,48 @@ export function useFamilyData(session) {
     return map
   }, [members, profile, user])
 
-  const ensureProfile = useCallback(async () => {
-    if (!user) return null
-    const { data: existing, error: readError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle()
-    if (readError) throw readError
-    if (existing) {
-      setProfile(existing)
-      return existing
-    }
-    const newProfile = {
-      id: user.id,
-      display_name: displayNameForUser(user),
-      avatar_url: avatarForUser(user)
-    }
-    const { data, error: insertError } = await supabase
-      .from('profiles')
-      .insert(newProfile)
-      .select()
-      .single()
-    if (insertError) throw insertError
-    setProfile(data)
-    return data
-  }, [user?.id])
+ const ensureProfile = useCallback(async () => {
+  if (!user) return null
+
+  const { data: existing, error: readError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (readError) throw readError
+
+  if (existing) {
+    setProfile(existing)
+    return existing
+  }
+
+  const newProfile = {
+    id: user.id,
+    display_name: displayNameForUser(user),
+    avatar_url: avatarForUser(user)
+  }
+
+  const { error: insertError } = await supabase
+    .from('profiles')
+    .upsert(newProfile, {
+      onConflict: 'id',
+      ignoreDuplicates: true
+    })
+
+  if (insertError) throw insertError
+
+  const { data, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  if (profileError) throw profileError
+
+  setProfile(data)
+  return data
+}, [user?.id])
 
   const loadHouseholds = useCallback(async (preferredId = '') => {
     if (!user) return []
