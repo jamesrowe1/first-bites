@@ -42,10 +42,21 @@ export default function FirstBitesApp({ family, session }) {
   </div>
 }
 
-function Header({ title, subtitle, syncing }) {
+function Header({ title, subtitle, syncing, onHome }) {
   return <header className="page-header">
-    <div><h1>{title}</h1>{subtitle && <p>{subtitle}{syncing ? ' • syncing…' : ''}</p>}</div>
-    <div className="brand-dot">FB</div>
+    <div>
+      <h1>{title}</h1>
+      {subtitle && <p>{subtitle}{syncing ? ' • syncing…' : ''}</p>}
+    </div>
+
+    <button
+      className="brand-dot"
+      onClick={onHome}
+      aria-label="Go to First Bites home"
+      title="Home"
+    >
+      FB
+    </button>
   </header>
 }
 
@@ -75,7 +86,12 @@ function Home(props) {
   const thisWeek = logs.filter(log => new Date(log.eaten_at) > new Date(Date.now() - 7 * 864e5)).length
 
   return <div className="page">
-    <Header title={`Hi, ${child?.name || 'there'}!`} subtitle={`${ageText(child?.birth_date)} • ${household?.name}`} syncing={syncing} />
+    <Header
+      title={`Hi, ${child?.name || 'there'}!`}
+      subtitle={`${ageText(child?.birth_date)} • ${household?.name}`}
+      syncing={syncing}
+      onHome={() => props.setTab('home')}
+    />
     <FamilyBar {...props} />
     <section className="hero-card">
       <div><span className="eyebrow">FOOD JOURNEY</span><strong>{tried.size}</strong><p>foods tried</p></div>
@@ -107,7 +123,11 @@ function Foods(props) {
   }
 
   return <div className="page">
-    <Header title="Foods" subtitle={`${tried.size} tried by ${child?.name} • ${foods.length} in starter library`} />
+    <Header
+      title="Foods"
+      subtitle={`${tried.size} tried by ${child?.name} • ${foods.length} in starter library`}
+      onHome={() => props.setTab('home')}
+    />
     <FamilyBar {...props} />
     <input className="search" placeholder="Search foods…" value={query} onChange={e => setQuery(e.target.value)} />
     <div className="chips">{categories.map(item => <button key={item} className={category === item ? 'chip active' : 'chip'} onClick={() => setCategory(item)}>{item}</button>)}</div>
@@ -151,7 +171,11 @@ function LogFood(props) {
   }
 
   return <div className="page">
-    <Header title="Log food" subtitle={`Add to ${child?.name}’s history`} />
+    <Header
+      title="Log food"
+      subtitle={`Add to ${child?.name}’s history`}
+      onHome={() => props.setTab('home')}
+    />
     <FamilyBar {...props} />
     <form className="form-card" onSubmit={submit}>
       <label>Food<select value={foodId} onChange={e => setFoodId(e.target.value)}>{foods.map(food => <option value={food.id} key={food.id}>{food.emoji} {food.name}</option>)}</select></label>
@@ -180,7 +204,11 @@ function Progress(props) {
   }
 
   return <div className="page">
-    <Header title="Progress" subtitle={`${triedIds.length} unique foods tried by ${child?.name}`} />
+    <Header
+      title="Progress"
+      subtitle={`${triedIds.length} unique foods tried by ${child?.name}`}
+      onHome={() => props.setTab('home')}
+    />
     <FamilyBar {...props} />
     <section className="progress-card"><div className="progress-top"><b>{triedIds.length} / 100 foods</b><span>{Math.min(triedIds.length, 100)}%</span></div><div className="bar"><i style={{ width: `${Math.min(triedIds.length, 100)}%` }} /></div></section>
     <h2>Allergen tracker</h2><div className="allergen-list">{introduced.map(item => <div className="allergen-row" key={item.allergen}><span className={item.count ? 'status-dot on' : 'status-dot'} /><div><b>{item.allergen}</b><small>{item.count ? `${item.count} exposure${item.count === 1 ? '' : 's'} • last ${new Date(item.last).toLocaleDateString()}` : 'Not logged yet'}</small></div></div>)}</div>
@@ -217,7 +245,11 @@ function Settings(props) {
   }
 
   return <div className="page">
-    <Header title="Settings" subtitle={`${household?.name} • ${syncing ? 'syncing…' : 'cloud sync on'}`} />
+    <Header
+      title="Settings"
+      subtitle={`${household?.name} • ${syncing ? 'syncing…' : 'cloud sync on'}`}
+      onHome={() => props.setTab('home')}
+    />
     <FamilyBar {...props} />
 
     <section className="settings-card">
