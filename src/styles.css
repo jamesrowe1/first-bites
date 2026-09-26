@@ -74,10 +74,7 @@ button {
     place-items: center;
     background: var(--peach);
     font-weight: 800;
-    color: #6c4d3d;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
+    color: #6c4d3d
 }
 
 .hero-card {
@@ -1149,4 +1146,39 @@ textarea:focus {
     .account-row {
         align-items: flex-start
     }
+}
+
+.brand-dot {
+    border: 0;
+    padding: 0;
+    cursor: pointer
+}
+
+.member-info {
+    min-width: 0;
+    flex: 1
+}
+
+.member-remove {
+    border: 0;
+    background: #f3dfdf;
+    color: var(--danger);
+    border-radius: 11px;
+    padding: 8px 10px;
+    font-weight: 800
+}
+
+.member-remove:disabled {
+    opacity: .6
+}
+
+.subtle-danger {
+    margin-top: 14px
+}
+
+.settings-help {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.45;
+    margin: 12px 0 0
 }

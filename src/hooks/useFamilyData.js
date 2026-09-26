@@ -44,48 +44,41 @@ export function useFamilyData(session) {
     return map
   }, [members, profile, user])
 
- const ensureProfile = useCallback(async () => {
-  if (!user) return null
+  const ensureProfile = useCallback(async () => {
+    if (!user) return null
+    const { data: existing, error: readError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (readError) throw readError
+    if (existing) {
+      setProfile(existing)
+      return existing
+    }
+    const newProfile = {
+      id: user.id,
+      display_name: displayNameForUser(user),
+      avatar_url: avatarForUser(user)
+    }
+    // React StrictMode can run startup effects more than once in development.
+    // Use an idempotent upsert so simultaneous profile creation attempts do not
+    // fail with a duplicate primary-key error. ignoreDuplicates preserves any
+    // display name/avatar the user may have customized later.
+    const { error: insertError } = await supabase
+      .from('profiles')
+      .upsert(newProfile, { onConflict: 'id', ignoreDuplicates: true })
+    if (insertError) throw insertError
 
-  const { data: existing, error: readError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (readError) throw readError
-
-  if (existing) {
-    setProfile(existing)
-    return existing
-  }
-
-  const newProfile = {
-    id: user.id,
-    display_name: displayNameForUser(user),
-    avatar_url: avatarForUser(user)
-  }
-
-  const { error: insertError } = await supabase
-    .from('profiles')
-    .upsert(newProfile, {
-      onConflict: 'id',
-      ignoreDuplicates: true
-    })
-
-  if (insertError) throw insertError
-
-  const { data, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  if (profileError) throw profileError
-
-  setProfile(data)
-  return data
-}, [user?.id])
+    const { data, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+    if (profileError) throw profileError
+    setProfile(data)
+    return data
+  }, [user?.id])
 
   const loadHouseholds = useCallback(async (preferredId = '') => {
     if (!user) return []
@@ -238,6 +231,30 @@ export function useFamilyData(session) {
     return data
   }
 
+
+  async function removeHouseholdMember(targetUserId) {
+    if (!householdId) throw new Error('Choose a household first.')
+    if (!targetUserId) throw new Error('Choose a family member.')
+    const { error: rpcError } = await supabase.rpc('remove_household_member', {
+      p_household_id: householdId,
+      p_user_id: targetUserId
+    })
+    if (rpcError) throw rpcError
+    await loadHouseholdContext(householdId)
+  }
+
+  async function leaveHousehold() {
+    if (!householdId) throw new Error('Choose a household first.')
+    const leavingId = householdId
+    const { error: rpcError } = await supabase.rpc('leave_household', {
+      p_household_id: leavingId
+    })
+    if (rpcError) throw rpcError
+    localStorage.removeItem(CHILD_KEY)
+    setChildIdState('')
+    await loadHouseholds('')
+  }
+
   async function createChild({ name, birth_date }) {
     if (!householdId) throw new Error('Choose a household first.')
     const clean = name.trim()
@@ -388,6 +405,8 @@ export function useFamilyData(session) {
     saveProfile,
     updateHouseholdName,
     regenerateInviteCode,
+    removeHouseholdMember,
+    leaveHousehold,
     addLog,
     removeLog,
     toggleFavorite,
