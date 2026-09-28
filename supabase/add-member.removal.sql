@@ -23,7 +23,7 @@ begin
   if v_target_role = 'owner' then raise exception 'A household owner cannot be removed.'; end if;
 
   delete from public.household_members
-  where household_i = p_household_id and user_id = p_user_id;
+  where household_id = p_household_id and user_id = p_user_id;
 end;
 $$;
 
