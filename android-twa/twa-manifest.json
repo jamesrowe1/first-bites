@@ -20,8 +20,8 @@
     "path": "first-bites-upload-key.jks",
     "alias": "android"
   },
-  "appVersionName": "1",
-  "appVersionCode": 1,
+  "appVersionName": "2",
+  "appVersionCode": 2,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://first-bites-roan.vercel.app/manifest.webmanifest",
@@ -36,12 +36,17 @@
   "fullScopeUrl": "https://first-bites-roan.vercel.app/",
   "minSdkVersion": 24,
   "orientation": "default",
-  "fingerprints": [],
+  "fingerprints": [
+    {
+      "name": "Upload key",
+      "value": "58:4F:D2:41:71:D1:9A:4B:13:04:01:53:EA:E5:F0:78:5E:F2:C4:52:2A:FA:62:45:87:6A:33:AB:BD:70:24:87"
+    }
+  ],
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
   "protocolHandlers": [],
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "1"
+  "appVersion": "2"
 }
