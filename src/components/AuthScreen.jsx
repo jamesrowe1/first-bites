@@ -59,6 +59,10 @@ export default function AuthScreen() {
       <button className="text-button" onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setMessage('') }}>
         {mode === 'signin' ? 'Need an account? Create one' : 'Already have an account? Sign in'}
       </button>
+      <div className="legal-links auth-legal">
+        <a href="/privacy/">Privacy Policy</a>
+        <a href="/delete-account/">Delete account</a>
+      </div>
     </div>
   </div>
 }

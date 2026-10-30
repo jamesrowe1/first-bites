@@ -283,6 +283,14 @@ function Settings(props) {
 
     <section className="settings-card"><h2>Sync</h2><p>Food history is shared with every member of this household. Each log records which signed-in caregiver added it.</p><button className="secondary" onClick={refreshAll} disabled={syncing}>{syncing ? 'Syncing…' : 'Refresh from cloud'}</button></section>
     <section className="settings-card"><h2>Install on Android</h2><p>After deployment, open First Bites in Chrome → menu (⋮) → <b>Install app</b> or <b>Add to Home screen</b>.</p></section>
+    <section className="settings-card">
+      <h2>Privacy & account</h2>
+      <p>Review how First Bites handles family data or request permanent deletion of your account and associated personal data.</p>
+      <div className="legal-links">
+        <a className="secondary-link" href="/privacy/">Privacy Policy</a>
+        <a className="danger-link" href="/delete-account/">Request account deletion</a>
+      </div>
+    </section>
     <button className="danger" onClick={() => supabase.auth.signOut()}>Sign out</button>
   </div>
 }

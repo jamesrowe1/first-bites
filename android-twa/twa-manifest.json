@@ -21,7 +21,7 @@
     "alias": "firstbites"
   },
   "appVersionName": "1.02",
-  "appVersionCode": 3,
+  "appVersionCode": 4,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://first-bites-roan.vercel.app/manifest.webmanifest",
@@ -48,6 +48,10 @@
     {
       "name": "Upload key",
       "value": "58:4F:D2:41:71:D1:9A:4B:13:04:01:53:EA:E5:F0:78:5E:F2:C4:52:2A:FA:62:45:87:6A:33:AB:BD:70:24:87"
+    },
+    {
+      "name": "Google Play",
+      "value": "43:86:72:4C:63:84:64:69:A1:CC:E6:E0:C9:A8:A1:2E:33:16:E5:29:29:8E:72:DF:25:89:96:36:3D:93:75:36"
     }
   ],
   "additionalTrustedOrigins": [],
@@ -56,5 +60,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "2"
+  "appVersion": "1.02"
 }
