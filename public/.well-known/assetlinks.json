@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "com.jamesrowe.firstbites",
-        "sha256_cert_fingerprints": ["58:4F:D2:41:71:D1:9A:4B:13:04:01:53:EA:E5:F0:78:5E:F2:C4:52:2A:FA:62:45:87:6A:33:AB:BD:70:24:87", "58:4F:D2:41:71:D1:9A:4B:13:04:01:53:EA:E5:F0:78:5E:F2:C4:52:2A:FA:62:45:87:6A:33:AB:BD:70:24:87"]
+        "sha256_cert_fingerprints": ["58:4F:D2:41:71:D1:9A:4B:13:04:01:53:EA:E5:F0:78:5E:F2:C4:52:2A:FA:62:45:87:6A:33:AB:BD:70:24:87", "58:4F:D2:41:71:D1:9A:4B:13:04:01:53:EA:E5:F0:78:5E:F2:C4:52:2A:FA:62:45:87:6A:33:AB:BD:70:24:87", "58:4F:D2:41:71:D1:9A:4B:13:04:01:53:EA:E5:F0:78:5E:F2:C4:52:2A:FA:62:45:87:6A:33:AB:BD:70:24:87"]
       }
     }]
