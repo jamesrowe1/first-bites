@@ -23,7 +23,7 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.jamesrowe.firstbites"
-    android:versionCode="2"
+    android:versionCode="3"
     android:versionName="2" >
 
     <uses-sdk

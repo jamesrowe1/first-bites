@@ -18,7 +18,7 @@
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "first-bites-upload-key.jks",
-    "alias": "android"
+    "alias": "firstbites"
   },
   "appVersionName": "2.1",
   "appVersionCode": 3,
