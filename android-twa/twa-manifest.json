@@ -20,7 +20,7 @@
     "path": "first-bites-upload-key.jks",
     "alias": "firstbites"
   },
-  "appVersionName": "2.1",
+  "appVersionName": "1.02",
   "appVersionCode": 3,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
