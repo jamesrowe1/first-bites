@@ -69,10 +69,10 @@ function FamilyBar({ household, households, householdId, setHouseholdId, child, 
 function Home(props) {
   const { logs, child, household, setTab, syncing, memberNames } = props
   const tried = new Set(logs.map(log => log.food_id))
-  const recent = logs.slice(0, 5)
+  const recent = logs.filter(log => !log.is_backfill).slice(0, 5)
   const introduced = new Set()
   logs.forEach(log => foodFor(log.food_id)?.allergens.forEach(allergen => introduced.add(allergen)))
-  const thisWeek = logs.filter(log => new Date(log.eaten_at) > new Date(Date.now() - 7 * 864e5)).length
+  const thisWeek = logs.filter(log => !log.is_backfill && new Date(log.eaten_at) > new Date(Date.now() - 7 * 864e5)).length
 
   return <div className="page">
     <Header title={`Hi, ${child?.name || 'there'}!`} subtitle={`${ageText(child?.birth_date)} • ${household?.name}`} syncing={syncing} onHome={() => setTab('home')} />
@@ -94,21 +94,79 @@ function Home(props) {
 }
 
 function Foods(props) {
-  const { logs, favorites, toggleFavorite, setTab, child } = props
+  const { logs, favorites, toggleFavorite, bulkAddFoods, setTab, child } = props
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [selected, setSelected] = useState(null)
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkQuery, setBulkQuery] = useState('')
+  const [bulkCategory, setBulkCategory] = useState('All')
+  const [bulkSelected, setBulkSelected] = useState(() => new Set())
+  const [bulkSaving, setBulkSaving] = useState(false)
   const tried = new Set(logs.map(log => log.food_id))
   const categories = ['All', ...new Set(foods.map(food => food.category))]
   const filtered = foods.filter(food => (category === 'All' || food.category === category) && food.name.toLowerCase().includes(query.toLowerCase()))
+  const bulkFiltered = foods.filter(food =>
+    (bulkCategory === 'All' || food.category === bulkCategory) &&
+    food.name.toLowerCase().includes(bulkQuery.toLowerCase())
+  )
+  const selectableVisible = bulkFiltered.filter(food => !tried.has(food.id))
 
   async function favorite(foodId) {
     try { await toggleFavorite(foodId) } catch (err) { alert(err.message) }
   }
 
+  function openBulk() {
+    setBulkQuery('')
+    setBulkCategory('All')
+    setBulkSelected(new Set())
+    setBulkOpen(true)
+  }
+
+  function toggleBulk(foodId) {
+    if (tried.has(foodId)) return
+    setBulkSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(foodId)) next.delete(foodId)
+      else next.add(foodId)
+      return next
+    })
+  }
+
+  function selectAllVisible() {
+    setBulkSelected(prev => {
+      const next = new Set(prev)
+      selectableVisible.forEach(food => next.add(food.id))
+      return next
+    })
+  }
+
+  function clearVisible() {
+    setBulkSelected(prev => {
+      const next = new Set(prev)
+      selectableVisible.forEach(food => next.delete(food.id))
+      return next
+    })
+  }
+
+  async function saveBulk() {
+    if (!bulkSelected.size) return
+    setBulkSaving(true)
+    try {
+      await bulkAddFoods([...bulkSelected])
+      setBulkOpen(false)
+      setBulkSelected(new Set())
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setBulkSaving(false)
+    }
+  }
+
   return <div className="page">
     <Header title="Foods" subtitle={`${tried.size} tried by ${child?.name} • ${foods.length} in starter library`} onHome={() => setTab('home')} />
     <FamilyBar {...props} />
+    <button className="bulk-add-launch" onClick={openBulk}><span>☑</span><div><b>Bulk add previously tried foods</b><small>Perfect for catching up when your child has already tried a lot.</small></div><i>›</i></button>
     <input className="search" placeholder="Search foods…" value={query} onChange={e => setQuery(e.target.value)} />
     <div className="chips">{categories.map(item => <button key={item} className={category === item ? 'chip active' : 'chip'} onClick={() => setCategory(item)}>{item}</button>)}</div>
     <div className="food-grid">{filtered.map(food => <button className="food-card" key={food.id} onClick={() => setSelected(food)}>
@@ -123,6 +181,23 @@ function Foods(props) {
       {selected.allergens.length > 0 && <div className="allergen-banner">Contains: {selected.allergens.join(', ')}</div>}
       <h3>Serving idea</h3><p>{selected.serve}</p><h3>Note</h3><p>{selected.note}</p>
       <div className="modal-actions"><button className="secondary" onClick={() => favorite(selected.id)}>{favorites.includes(selected.id) ? '★ Favorite' : '☆ Favorite'}</button><button className="primary" onClick={() => { setSelected(null); setTab('log') }}>Log a food</button></div>
+    </div></div>}
+    {bulkOpen && <div className="modal-backdrop bulk-backdrop" onClick={() => !bulkSaving && setBulkOpen(false)}><div className="bulk-modal" onClick={e => e.stopPropagation()}>
+      <div className="bulk-header"><div><span className="eyebrow">QUICK CATCH-UP</span><h2>Previously tried foods</h2><p>Choose foods {child?.name} tried before First Bites. These count toward progress without creating dated meal logs.</p></div><button className="close" disabled={bulkSaving} onClick={() => setBulkOpen(false)}>×</button></div>
+      <input className="search" placeholder="Search foods…" value={bulkQuery} onChange={e => setBulkQuery(e.target.value)} autoFocus />
+      <div className="chips bulk-chips">{categories.map(item => <button key={item} className={bulkCategory === item ? 'chip active' : 'chip'} onClick={() => setBulkCategory(item)}>{item}</button>)}</div>
+      <div className="bulk-actions"><button className="text-button" onClick={selectAllVisible} disabled={!selectableVisible.length}>Select all visible</button><button className="text-button" onClick={clearVisible} disabled={!bulkSelected.size}>Clear visible</button><span>{bulkSelected.size} new selected</span></div>
+      <div className="bulk-food-list">{bulkFiltered.map(food => {
+        const already = tried.has(food.id)
+        const checked = already || bulkSelected.has(food.id)
+        return <label className={already ? 'bulk-food-row already' : 'bulk-food-row'} key={food.id}>
+          <input type="checkbox" checked={checked} disabled={already || bulkSaving} onChange={() => toggleBulk(food.id)} />
+          <span className="bulk-food-emoji">{food.emoji}</span>
+          <span className="bulk-food-name"><b>{food.name}</b><small>{food.category}{food.allergens.length ? ` • Allergen: ${food.allergens.join(', ')}` : ''}</small></span>
+          {already && <span className="bulk-already">Already tried</span>}
+        </label>
+      })}</div>
+      <div className="bulk-footer"><div><b>{bulkSelected.size} food{bulkSelected.size === 1 ? '' : 's'} selected</b><small>Saved as previously tried — no date, rating, or weekly log.</small></div><button className="primary" disabled={!bulkSelected.size || bulkSaving} onClick={saveBulk}>{bulkSaving ? 'Adding…' : `Add ${bulkSelected.size || ''} food${bulkSelected.size === 1 ? '' : 's'}`}</button></div>
     </div></div>}
   </div>
 }
@@ -171,8 +246,11 @@ function Progress(props) {
   const triedIds = [...new Set(logs.map(log => log.food_id))]
   const introduced = ALLERGENS.map(allergen => {
     const matching = logs.filter(log => foodFor(log.food_id)?.allergens.includes(allergen))
-    return { allergen, count: matching.length, last: matching[0]?.eaten_at }
+    const dated = matching.filter(log => !log.is_backfill)
+    return { allergen, introduced: matching.length > 0, count: dated.length, last: dated[0]?.eaten_at }
   })
+  const datedLogs = logs.filter(log => !log.is_backfill)
+  const backfilledIds = [...new Set(logs.filter(log => log.is_backfill).map(log => log.food_id))]
 
   async function remove(id) {
     if (!confirm('Remove this food log?')) return
@@ -183,8 +261,9 @@ function Progress(props) {
     <Header title="Progress" subtitle={`${triedIds.length} unique foods tried by ${child?.name}`} onHome={() => props.setTab('home')} />
     <FamilyBar {...props} />
     <section className="progress-card"><div className="progress-top"><b>{triedIds.length} / 100 foods</b><span>{Math.min(triedIds.length, 100)}%</span></div><div className="bar"><i style={{ width: `${Math.min(triedIds.length, 100)}%` }} /></div></section>
-    <h2>Allergen tracker</h2><div className="allergen-list">{introduced.map(item => <div className="allergen-row" key={item.allergen}><span className={item.count ? 'status-dot on' : 'status-dot'} /><div><b>{item.allergen}</b><small>{item.count ? `${item.count} exposure${item.count === 1 ? '' : 's'} • last ${new Date(item.last).toLocaleDateString()}` : 'Not logged yet'}</small></div></div>)}</div>
-    <h2>History</h2><div className="card-list">{logs.length === 0 ? <Empty text="Food history will appear here." /> : logs.map(log => <LogRow key={log.id} log={log} memberNames={memberNames} removable onRemove={() => remove(log.id)} />)}</div>
+    <h2>Allergen tracker</h2><div className="allergen-list">{introduced.map(item => <div className="allergen-row" key={item.allergen}><span className={item.introduced ? 'status-dot on' : 'status-dot'} /><div><b>{item.allergen}</b><small>{item.introduced ? (item.count ? `${item.count} dated exposure${item.count === 1 ? '' : 's'} • last ${new Date(item.last).toLocaleDateString()}` : 'Previously introduced') : 'Not logged yet'}</small></div></div>)}</div>
+    {backfilledIds.length > 0 && <div className="backfill-summary"><b>✓ {backfilledIds.length} food{backfilledIds.length === 1 ? '' : 's'} added as previously tried</b><span>They count toward food and allergen progress but do not appear as dated meal logs.</span></div>}
+    <h2>History</h2><div className="card-list">{datedLogs.length === 0 ? <Empty text={backfilledIds.length ? 'No dated food logs yet.' : 'Food history will appear here.'} /> : datedLogs.map(log => <LogRow key={log.id} log={log} memberNames={memberNames} removable onRemove={() => remove(log.id)} />)}</div>
   </div>
 }
 

@@ -53,6 +53,7 @@ create table if not exists public.child_food_logs (
   amount text,
   notes text,
   first_exposure boolean not null default false,
+  is_backfill boolean not null default false,
   created_at timestamptz not null default now()
 );
 

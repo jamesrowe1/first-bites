@@ -345,6 +345,38 @@ export function useFamilyData(session) {
     return data
   }
 
+  async function bulkAddFoods(foodIds) {
+    if (!childId) throw new Error('Choose a child first.')
+    const requested = [...new Set((foodIds ?? []).filter(Boolean))]
+    const alreadyTried = new Set(logs.map(log => log.food_id))
+    const newFoodIds = requested.filter(foodId => !alreadyTried.has(foodId))
+    if (!newFoodIds.length) return []
+
+    const now = new Date().toISOString()
+    const rows = newFoodIds.map(foodId => ({
+      child_id: childId,
+      logged_by: user.id,
+      food_id: foodId,
+      eaten_at: now,
+      liked: null,
+      reaction: 'none',
+      amount: null,
+      notes: null,
+      first_exposure: true,
+      is_backfill: true
+    }))
+
+    const { data, error: insertError } = await supabase
+      .from('child_food_logs')
+      .insert(rows)
+      .select()
+    if (insertError) throw insertError
+
+    const added = data ?? []
+    setLogs(prev => [...added, ...prev].sort((a, b) => new Date(b.eaten_at) - new Date(a.eaten_at)))
+    return added
+  }
+
   async function removeLog(id) {
     const { error: deleteError } = await supabase.from('child_food_logs').delete().eq('id', id)
     if (deleteError) throw deleteError
@@ -408,6 +440,7 @@ export function useFamilyData(session) {
     removeHouseholdMember,
     leaveHousehold,
     addLog,
+    bulkAddFoods,
     removeLog,
     toggleFavorite,
     refreshAll
