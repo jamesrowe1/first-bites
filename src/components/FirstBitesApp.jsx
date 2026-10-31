@@ -23,8 +23,9 @@ function foodFor(id) {
 
 export default function FirstBitesApp({ family, session }) {
   const [tab, setTab] = useState('home')
+  const [logFoodId, setLogFoodId] = useState(null)
 
-  const shared = { ...family, session, setTab }
+  const shared = { ...family, session, setTab, logFoodId, setLogFoodId }
   return <div className="app-shell">
     {family.error && <div className="top-error" onClick={() => family.setError('')}>{family.error}<span>×</span></div>}
     <main>
@@ -37,7 +38,16 @@ export default function FirstBitesApp({ family, session }) {
     <nav className="bottom-nav">
       <NavButton active={tab === 'home'} icon="⌂" label="Home" onClick={() => setTab('home')} />
       <NavButton active={tab === 'foods'} icon="◉" label="Foods" onClick={() => setTab('foods')} />
-      <button className="log-fab" onClick={() => setTab('log')} aria-label="Log food">＋</button>
+    <button
+      className="log-fab"
+      onClick={() => {
+        setLogFoodId(null)
+        setTab('log')
+      }}
+      aria-label="Log food"
+    >
+      ＋
+    </button>
       <NavButton active={tab === 'progress'} icon="✓" label="Progress" onClick={() => setTab('progress')} />
       <NavButton active={tab === 'settings'} icon="⚙" label="Settings" onClick={() => setTab('settings')} />
     </nav>
@@ -69,7 +79,7 @@ function FamilyBar({ household, households, householdId, setHouseholdId, child, 
 }
 
 function Home(props) {
-  const { logs, child, household, setTab, syncing, memberNames } = props
+const { logs, child, household, setTab, setLogFoodId, syncing, memberNames } = props
   const tried = new Set(logs.map(log => log.food_id))
   const recent = logs.filter(log => !log.is_backfill).slice(0, 5)
   const introduced = new Set()
@@ -87,7 +97,15 @@ function Home(props) {
       <div className="stat-card"><b>{introduced.size}/{ALLERGENS.length}</b><span>allergens introduced</span></div>
       <div className="stat-card"><b>{thisWeek}</b><span>logs this week</span></div>
     </div>
-    <section className="section-row"><h2>Recent foods</h2><button onClick={() => setTab('log')}>+ Log food</button></section>
+    <section className="section-row">
+      <h2>Recent foods</h2>
+      <button onClick={() => {
+        setLogFoodId(null)
+        setTab('log')
+      }}>
+        + Log food
+      </button>
+    </section>
     <div className="card-list">
       {recent.length === 0 ? <Empty text="Nothing logged yet. Add the first food!" /> : recent.map(log => <LogRow key={log.id} log={log} memberNames={memberNames} />)}
     </div>
@@ -96,7 +114,7 @@ function Home(props) {
 }
 
 function Foods(props) {
-  const { logs, favorites, toggleFavorite, bulkAddFoods, setTab, child } = props
+  const { logs, favorites, toggleFavorite, bulkAddFoods, setTab, setLogFoodId, child } = props
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [selected, setSelected] = useState(null)
@@ -182,7 +200,25 @@ function Foods(props) {
       <p className="meta">Generally from {selected.minMonths}+ months • {selected.category}</p>
       {selected.allergens.length > 0 && <div className="allergen-banner">Contains: {selected.allergens.join(', ')}</div>}
       <h3>Serving idea</h3><p>{selected.serve}</p><h3>Note</h3><p>{selected.note}</p>
-      <div className="modal-actions"><button className="secondary" onClick={() => favorite(selected.id)}>{favorites.includes(selected.id) ? '★ Favorite' : '☆ Favorite'}</button><button className="primary" onClick={() => { setSelected(null); setTab('log') }}>Log a food</button></div>
+      <div className="modal-actions">
+        <button
+          className="secondary"
+          onClick={() => favorite(selected.id)}
+        >
+          {favorites.includes(selected.id) ? '★ Favorite' : '☆ Favorite'}
+        </button>
+
+        <button
+          className="primary"
+          onClick={() => {
+            setLogFoodId(selected.id)
+            setSelected(null)
+            setTab('log')
+          }}
+        >
+          Log a food
+        </button>
+      </div>
     </div></div>}
     {bulkOpen && <div className="modal-backdrop bulk-backdrop" onClick={() => !bulkSaving && setBulkOpen(false)}><div className="bulk-modal" onClick={e => e.stopPropagation()}>
       <div className="bulk-header"><div><span className="eyebrow">QUICK CATCH-UP</span><h2>Previously tried foods</h2><p>Choose foods {child?.name} tried before First Bites. These count toward progress without creating dated meal logs.</p></div><button className="close" disabled={bulkSaving} onClick={() => setBulkOpen(false)}>×</button></div>
@@ -205,8 +241,8 @@ function Foods(props) {
 }
 
 function LogFood(props) {
-  const { addLog, setTab, child } = props
-  const [foodId, setFoodId] = useState(foods[0].id)
+  const { addLog, setTab, child, logFoodId, setLogFoodId } = props
+  const [foodId, setFoodId] = useState(logFoodId || foods[0].id)
   const [eatenAt, setEatenAt] = useState(new Date().toISOString().slice(0, 16))
   const [liked, setLiked] = useState('liked')
   const [reaction, setReaction] = useState('none')
@@ -219,7 +255,8 @@ function LogFood(props) {
     setSaving(true)
     try {
       await addLog({ food_id: foodId, eaten_at: new Date(eatenAt).toISOString(), liked, reaction, amount, notes })
-      setTab('home')
+        setLogFoodId(null)
+        setTab('home')
     } catch (err) {
       alert(err.message)
     } finally {
