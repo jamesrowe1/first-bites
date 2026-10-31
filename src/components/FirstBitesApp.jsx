@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ALLERGENS, foods } from '../data/foods'
 import { supabase } from '../lib/supabase'
+import ReactionHistory from './ReactionHistory'
+import ReactionPhotoTip from './ReactionPhotoTip'
 
 function ageText(birthDate) {
   if (!birthDate) return 'Birth date not set'
@@ -234,6 +236,9 @@ function LogFood(props) {
       <fieldset><legend>How did it go?</legend><div className="segmented">{['liked', 'neutral', 'disliked'].map(item => <button type="button" key={item} className={liked === item ? 'active' : ''} onClick={() => setLiked(item)}>{item}</button>)}</div></fieldset>
       <label>Reaction<select value={reaction} onChange={e => setReaction(e.target.value)}><option value="none">No reaction</option><option value="possible">Possible reaction</option><option value="mild">Mild reaction</option><option value="significant">Significant reaction</option></select></label>
       {reaction !== 'none' && <div className="reaction-note"><b>For tracking only.</b> If symptoms could represent an allergic reaction, follow your child’s medical plan and seek appropriate medical care.</div>}
+      <ReactionPhotoTip
+        reaction={reaction}
+      />
       <label>Amount / description<input placeholder="e.g. 3 spoonfuls" value={amount} onChange={e => setAmount(e.target.value)} /></label>
       <label>Notes<textarea rows="4" placeholder="Texture, preparation, symptoms, what worked…" value={notes} onChange={e => setNotes(e.target.value)} /></label>
       <button className="primary big" disabled={saving}>{saving ? 'Saving…' : 'Save food log'}</button>
@@ -249,6 +254,7 @@ function Progress(props) {
     const dated = matching.filter(log => !log.is_backfill)
     return { allergen, introduced: matching.length > 0, count: dated.length, last: dated[0]?.eaten_at }
   })
+  
   const datedLogs = logs.filter(log => !log.is_backfill)
   const backfilledIds = [...new Set(logs.filter(log => log.is_backfill).map(log => log.food_id))]
 
@@ -264,6 +270,10 @@ function Progress(props) {
     <h2>Allergen tracker</h2><div className="allergen-list">{introduced.map(item => <div className="allergen-row" key={item.allergen}><span className={item.introduced ? 'status-dot on' : 'status-dot'} /><div><b>{item.allergen}</b><small>{item.introduced ? (item.count ? `${item.count} dated exposure${item.count === 1 ? '' : 's'} • last ${new Date(item.last).toLocaleDateString()}` : 'Previously introduced') : 'Not logged yet'}</small></div></div>)}</div>
     {backfilledIds.length > 0 && <div className="backfill-summary"><b>✓ {backfilledIds.length} food{backfilledIds.length === 1 ? '' : 's'} added as previously tried</b><span>They count toward food and allergen progress but do not appear as dated meal logs.</span></div>}
     <h2>History</h2><div className="card-list">{datedLogs.length === 0 ? <Empty text={backfilledIds.length ? 'No dated food logs yet.' : 'Food history will appear here.'} /> : datedLogs.map(log => <LogRow key={log.id} log={log} memberNames={memberNames} removable onRemove={() => remove(log.id)} />)}</div>
+    <ReactionHistory
+      logs={logs}
+      foods={foods}
+    />
   </div>
 }
 
