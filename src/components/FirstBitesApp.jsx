@@ -216,6 +216,32 @@ function Settings(props) {
     setTimeout(() => setCopied(false), 1600)
   }
 
+  async function deleteAccount() {
+    const confirmation = window.prompt(
+      'This permanently deletes your First Bites account and personal data. Type DELETE to continue.'
+    )
+    if (confirmation !== 'DELETE') return
+
+    setBusy('delete-account')
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-account', {
+        body: { confirmation: 'DELETE' }
+      })
+      if (error) throw error
+      if (!data?.deleted) throw new Error(data?.error || 'Account deletion failed.')
+
+      localStorage.removeItem('first-bites-active-household-v2')
+      localStorage.removeItem('first-bites-active-child-v2')
+      await supabase.auth.signOut({ scope: 'local' })
+      window.location.href = '/'
+    } catch (err) {
+      console.error(err)
+      alert('Could not delete your account. Please try again. If the problem continues, use the deletion request page.')
+    } finally {
+      setBusy('')
+    }
+  }
+
   return <div className="page">
     <Header title="Settings" subtitle={`${household?.name} • ${syncing ? 'syncing…' : 'cloud sync on'}`} onHome={() => setTab('home')} />
     <FamilyBar {...props} />
@@ -285,11 +311,14 @@ function Settings(props) {
     <section className="settings-card"><h2>Install on Android</h2><p>After deployment, open First Bites in Chrome → menu (⋮) → <b>Install app</b> or <b>Add to Home screen</b>.</p></section>
     <section className="settings-card">
       <h2>Privacy & account</h2>
-      <p>Review how First Bites handles family data or request permanent deletion of your account and associated personal data.</p>
+      <p>Review how First Bites handles family data or permanently delete your account and associated personal data.</p>
       <div className="legal-links">
         <a className="secondary-link" href="/privacy/">Privacy Policy</a>
-        <a className="danger-link" href="/delete-account/">Request account deletion</a>
+        <a className="secondary-link" href="/delete-account/">Deletion information</a>
       </div>
+      <button className="danger" disabled={busy === 'delete-account'} onClick={deleteAccount}>
+        {busy === 'delete-account' ? 'Deleting account…' : 'Delete my account'}
+      </button>
     </section>
     <button className="danger" onClick={() => supabase.auth.signOut()}>Sign out</button>
   </div>
